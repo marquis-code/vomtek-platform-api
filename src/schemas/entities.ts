@@ -21,9 +21,10 @@ export class User {
   @Prop({ required: true, unique: true, lowercase: true }) email: string
   @Prop({ required: true }) name: string
   @Prop({ required: true }) passwordHash: string
-  @Prop({ required: true, enum: ['owner', 'admin', 'engineer', 'contractor', 'homeowner'] }) role: string
+  @Prop({ required: true, enum: ['owner', 'admin', 'ops', 'engineer', 'contractor', 'homeowner', 'manufacturer'] }) role: string
   @Prop({ required: true }) orgId: string
   @Prop({ default: true }) active: boolean
+  @Prop({ default: '' }) phone: string
   @Prop() lastLoginAt: Date
 }
 export const UserSchema = SchemaFactory.createForClass(User)
@@ -56,6 +57,8 @@ export class InspectionRun {
   @Prop({ default: 'MFL + Caliper' }) toolType: string
   @Prop({ default: () => new Date() }) runDate: Date
   @Prop({ default: '' }) fileName: string
+  @Prop({ default: '' }) filePath: string
+  @Prop({ type: [Object], default: [] }) rows: Record<string, unknown>[]
   @Prop({ default: 'complete', enum: ['queued', 'processing', 'complete', 'failed'] }) status: string
   @Prop() reportId: string
   @Prop() summary: string
@@ -75,6 +78,8 @@ export class Report {
   @Prop({ default: 0 }) cgr: number
   @Prop({ default: 0 }) safePressureKpa: number
   @Prop({ default: 0 }) remainingLifeYears: number
+  @Prop({ default: '' }) previousReportId: string
+  @Prop({ default: '' }) pdfPath: string
   @Prop({ type: [Object], default: [] }) anomalies: Record<string, unknown>[]
   @Prop({ type: [Object], default: [] }) b31g: Record<string, unknown>[]
   @Prop({ type: [Object], default: [] }) heatmap: Record<string, unknown>[]
@@ -127,6 +132,11 @@ export class Rental {
   @Prop({ default: 0 }) deposit: number
   @Prop({ default: 0 }) total: number
   @Prop({ default: 'reserved' }) status: string
+  @Prop() pickupAt: Date
+  @Prop() returnedAt: Date
+  @Prop({ default: 'held' }) depositStatus: string
+  @Prop({ default: 0 }) lateFee: number
+  @Prop({ default: '' }) returnNotes: string
   @Prop() ref: string
 }
 export const RentalSchema = SchemaFactory.createForClass(Rental)
@@ -183,6 +193,9 @@ export class Job {
   @Prop({ type: Object }) certificate: Record<string, unknown>
   @Prop({ default: 0 }) healthScore: number
   @Prop() contractorOrgId: string
+  @Prop() verifiedAt: Date
+  @Prop({ type: [String], default: [] }) completionPhotos: string[]
+  @Prop({ default: '' }) completionNotes: string
 }
 export const JobSchema = SchemaFactory.createForClass(Job)
 
@@ -190,6 +203,7 @@ export const JobSchema = SchemaFactory.createForClass(Job)
 export class Bid {
   @Prop({ required: true }) jobId: string
   @Prop({ required: true }) contractorName: string
+  @Prop({ default: '' }) contractorOrgId: string
   @Prop({ required: true }) amountUsd: number
   @Prop({ default: 3 }) days: number
   @Prop({ default: '' }) note: string
@@ -217,3 +231,118 @@ export class Lead {
   @Prop({ default: 'website' }) source: string
 }
 export const LeadSchema = SchemaFactory.createForClass(Lead)
+
+
+@Schema({ timestamps: true })
+export class Invoice {
+  @Prop({ required: true, unique: true }) ref: string
+  @Prop({ required: true }) orgId: string
+  @Prop({ required: true }) type: string
+  @Prop({ default: 'usd' }) currency: string
+  @Prop({ type: [Object], default: [] }) lines: Record<string, unknown>[]
+  @Prop({ default: 0 }) subtotal: number
+  @Prop({ default: 0 }) tax: number
+  @Prop({ default: 0 }) total: number
+  @Prop({ default: 'issued', enum: ['draft', 'issued', 'paid', 'void', 'refunded'] }) status: string
+  @Prop({ default: '' }) orderId: string
+  @Prop({ default: '' }) provider: string
+  @Prop() dueAt: Date
+  @Prop() paidAt: Date
+}
+export const InvoiceSchema = SchemaFactory.createForClass(Invoice)
+
+@Schema({ timestamps: true })
+export class Payment {
+  @Prop({ required: true }) orgId: string
+  @Prop({ default: '' }) invoiceId: string
+  @Prop({ default: 'simulator' }) provider: string
+  @Prop({ default: '' }) providerRef: string
+  @Prop({ required: true }) amount: number
+  @Prop({ default: 'succeeded' }) status: string
+  @Prop({ default: 'card' }) method: string
+  @Prop({ type: Object, default: {} }) meta: Record<string, unknown>
+}
+export const PaymentSchema = SchemaFactory.createForClass(Payment)
+
+@Schema({ timestamps: true })
+export class Refund {
+  @Prop({ required: true }) orgId: string
+  @Prop({ required: true }) paymentId: string
+  @Prop({ required: true }) invoiceId: string
+  @Prop({ required: true }) amount: number
+  @Prop({ default: 'succeeded' }) status: string
+  @Prop({ default: '' }) reason: string
+  @Prop({ default: '' }) createdBy: string
+}
+export const RefundSchema = SchemaFactory.createForClass(Refund)
+
+@Schema({ timestamps: true })
+export class ContractorProfile {
+  @Prop({ required: true, unique: true }) orgId: string
+  @Prop({ default: '' }) licenseNumber: string
+  @Prop({ default: '' }) insuranceProvider: string
+  @Prop() insuranceExpiry: Date
+  @Prop({ type: [String], default: [] }) serviceAreas: string[]
+  @Prop({ type: [String], default: [] }) capabilities: string[]
+  @Prop({ default: 'pending' }) verificationStatus: string
+  @Prop({ default: 0 }) rating: number
+  @Prop({ default: 0 }) completedJobs: number
+  @Prop({ default: true }) acceptingJobs: boolean
+}
+export const ContractorProfileSchema = SchemaFactory.createForClass(ContractorProfile)
+
+@Schema({ timestamps: true })
+export class WorkOrder {
+  @Prop({ required: true }) jobId: string
+  @Prop({ required: true }) orgId: string
+  @Prop({ required: true }) contractorOrgId: string
+  @Prop({ required: true }) bidId: string
+  @Prop({ default: 'scheduled', enum: ['scheduled', 'mobilised', 'in_progress', 'completed', 'verified', 'cancelled'] }) status: string
+  @Prop() scheduledAt: Date
+  @Prop({ default: '' }) scope: string
+  @Prop({ type: [String], default: [] }) completionPhotos: string[]
+  @Prop({ default: '' }) completionNotes: string
+  @Prop() verifiedAt: Date
+  @Prop({ default: '' }) verifiedBy: string
+}
+export const WorkOrderSchema = SchemaFactory.createForClass(WorkOrder)
+
+@Schema({ timestamps: true })
+export class AuditLog {
+  @Prop({ default: '' }) orgId: string
+  @Prop({ default: '' }) userId: string
+  @Prop({ required: true }) action: string
+  @Prop({ default: '' }) entity: string
+  @Prop({ default: '' }) entityId: string
+  @Prop({ type: Object, default: {} }) meta: Record<string, unknown>
+  @Prop({ default: '' }) ip: string
+}
+export const AuditLogSchema = SchemaFactory.createForClass(AuditLog)
+
+@Schema({ timestamps: true })
+export class Notification {
+  @Prop({ default: '' }) orgId: string
+  @Prop({ default: '' }) userId: string
+  @Prop({ default: 'in_app' }) channel: string
+  @Prop({ required: true }) subject: string
+  @Prop({ default: '' }) body: string
+  @Prop({ default: 'queued' }) status: string
+  @Prop() readAt: Date
+}
+export const NotificationSchema = SchemaFactory.createForClass(Notification)
+
+@Schema({ timestamps: true })
+export class Setting {
+  @Prop({ required: true, unique: true }) key: string
+  @Prop({ type: Object, default: {} }) value: Record<string, unknown>
+}
+export const SettingSchema = SchemaFactory.createForClass(Setting)
+
+@Schema({ timestamps: true })
+export class PasswordReset {
+  @Prop({ required: true }) userId: string
+  @Prop({ required: true, unique: true }) token: string
+  @Prop({ required: true }) expiresAt: Date
+  @Prop({ default: false }) used: boolean
+}
+export const PasswordResetSchema = SchemaFactory.createForClass(PasswordReset)

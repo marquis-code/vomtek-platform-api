@@ -16,13 +16,16 @@ MongoDB must be available on `MONGODB_URI` (default
 database is seeded automatically.
 
 ## Modules
-- Auth/JWT + roles
-- Public catalog, plans, configurator, leads
-- Portal: assets, inspections, reports, orders, rentals, subscription, jobs,
-  bids, escrow
-- Admin: metrics, accounts, orders, rentals, reports, jobs, catalog,
-  subscriptions, partners, leads
+- Auth/JWT + roles, registration and password reset
+- Public catalog, plans, configurator, leads, partner applications
+- Portal: assets, CSV upload, reports/comparison/PDF, orders, invoices/payments,
+  rentals/pickup/return, subscription, jobs, bids, escrow, contractor profiles
+  and work orders, notifications, manufacturer catalog
+- Admin: metrics, accounts, orders, invoices/refunds, rentals, reports, jobs,
+  work-order verification, catalog, subscriptions, partners, contractors, users,
+  leads, audit and settings
 - Engine client with deterministic fallback
+- PDFKit report/invoice generation and local upload storage
 
 ## Environment
 See `.env.example`. Seed accounts:

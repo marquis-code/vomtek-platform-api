@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import * as bcrypt from 'bcryptjs'
-import { Asset, Bid, Doc, Escrow, InspectionRun, Job, Lead, Manufacturer, Order, Organization, Plan, Product, Rental, Report, Subscription, User } from './schemas/entities'
+import { Asset, AuditLog, Bid, ContractorProfile, Doc, Escrow, InspectionRun, Invoice, Job, Lead, Manufacturer, Notification, Order, Organization, Payment, Plan, Product, Rental, Report, Setting, Subscription, User, WorkOrder } from './schemas/entities'
 import { EngineService } from './engine'
 
 @Injectable()
@@ -24,6 +24,13 @@ export class SeedService implements OnModuleInit {
     @InjectModel(Escrow.name) private escrows: Model<Doc<Escrow>>,
     @InjectModel(Manufacturer.name) private manufacturers: Model<Doc<Manufacturer>>,
     @InjectModel(Lead.name) private leads: Model<Doc<Lead>>,
+    @InjectModel(Invoice.name) private invoices: Model<Doc<Invoice>>,
+    @InjectModel(Payment.name) private payments: Model<Doc<Payment>>,
+    @InjectModel(ContractorProfile.name) private contractorProfiles: Model<Doc<ContractorProfile>>,
+    @InjectModel(WorkOrder.name) private workOrders: Model<Doc<WorkOrder>>,
+    @InjectModel(Notification.name) private notifications: Model<Doc<Notification>>,
+    @InjectModel(AuditLog.name) private audits: Model<Doc<AuditLog>>,
+    @InjectModel(Setting.name) private settings: Model<Doc<Setting>>,
     private engine: EngineService,
   ) {}
 
@@ -37,6 +44,7 @@ export class SeedService implements OnModuleInit {
       this.users.deleteMany({}), this.orgs.deleteMany({}), this.assets.deleteMany({}), this.runs.deleteMany({}), this.reports.deleteMany({}),
       this.products.deleteMany({}), this.orders.deleteMany({}), this.rentals.deleteMany({}), this.plans.deleteMany({}), this.subs.deleteMany({}),
       this.jobs.deleteMany({}), this.bids.deleteMany({}), this.escrows.deleteMany({}), this.manufacturers.deleteMany({}), this.leads.deleteMany({}),
+      this.invoices.deleteMany({}), this.payments.deleteMany({}), this.contractorProfiles.deleteMany({}), this.workOrders.deleteMany({}), this.notifications.deleteMany({}), this.audits.deleteMany({}), this.settings.deleteMany({}),
     ])
     const [northstar, harris, cedar, precision, polyform, opsOrg] = await this.orgs.create([
       { name: 'Northstar Midstream', slug: 'northstar', type: 'operator', plan: 'scale', miles: 48, status: 'active' },
@@ -54,6 +62,7 @@ export class SeedService implements OnModuleInit {
       { email: 'homeowner@linesight.io', name: 'Cedar Ridge HOA', passwordHash: hash, role: 'homeowner', orgId: cedar.id },
       { email: 'contractor@linesight.io', name: 'Luis Ortega', passwordHash: hash, role: 'contractor', orgId: precision.id },
       { email: 'ops@linesight.io', name: 'LineSight Operations', passwordHash: opsHash, role: 'admin', orgId: opsOrg.id },
+      { email: 'supplier@linesight.io', name: 'PolyForm Supply', passwordHash: hash, role: 'manufacturer', orgId: polyform.id },
     ])
 
     const [trunk, gathering, reclaimed] = await this.assets.create([
@@ -119,6 +128,14 @@ export class SeedService implements OnModuleInit {
     ])
     const job2 = await this.jobs.create({ ref: 'LSH-2026-1819', customerName: 'Cedar Ridge HOA', email: 'homeowner@linesight.io', address: '88 Cedar Ridge Ln', city: 'Katy, TX', propertyType: 'residential', issue: 'Slow drain in the clubhouse kitchen line.', videoUrl: 'clubhouse-kitchen.mp4', status: 'awarded', healthScore: 84, contractorOrgId: precision.id, defects: [{ type: 'Grease buildup', severity: 'medium', distanceFt: 16, confidence: .88, note: 'Grease accumulation through the first 18 ft.' }], certificate: { issuedAt: new Date(Date.now() - 16 * 86400000), standard: 'LineSight Visual Assessment v1', confidence: .88, footageReviewedFt: 42, summary: 'Grease buildup; jetting recommended.' } })
     await this.escrows.create({ jobId: job2.id, amount: 2600, status: 'partially_released', milestones: [{ label: 'Mobilisation', amount: 780, status: 'released' }, { label: 'Repair complete', amount: 1300, status: 'pending' }, { label: 'Verification', amount: 520, status: 'pending' }] })
+    await this.contractorProfiles.create({ orgId: precision.id, licenseNumber: 'TX-PL-48219', insuranceProvider: 'Travelers', insuranceExpiry: new Date(Date.now() + 240 * 86400000), serviceAreas: ['Katy', 'Houston', 'Sugar Land'], capabilities: ['Trenchless repair', 'Camera verification'], verificationStatus: 'verified', rating: 4.8, completedJobs: 42, acceptingJobs: true })
+    const awardedBid = await this.bids.create({ jobId: job2.id, contractorName: 'Precision Trenchless', contractorOrgId: precision.id, amountUsd: 2600, days: 2, note: 'Jet and repair clubhouse line', status: 'awarded' })
+    await this.workOrders.create({ jobId: job2.id, orgId: precision.id, contractorOrgId: precision.id, bidId: awardedBid.id, status: 'in_progress', scope: 'Jet and repair clubhouse kitchen line', scheduledAt: new Date(Date.now() + 2 * 86400000) })
+    const paidInvoice = await this.invoices.create({ ref: 'INV-1042', orgId: northstar.id, type: 'marketplace', lines: [{ description: products[0].name, qty: 1, amount: products[0].priceUsd }], subtotal: 9800, tax: 808.5, total: 10608.5, status: 'paid', paidAt: new Date(Date.now() - 18 * 86400000), dueAt: new Date(Date.now() - 4 * 86400000), orderId: '' })
+    await this.invoices.create({ ref: 'INV-1043', orgId: harris.id, type: 'marketplace', lines: [{ description: products[4].name, qty: 1, amount: products[4].priceUsd }], subtotal: 395, tax: 32.59, total: 427.59, status: 'issued', dueAt: new Date(Date.now() + 9 * 86400000), orderId: '' })
+    await this.payments.create({ orgId: northstar.id, invoiceId: paidInvoice.id, provider: 'simulator', providerRef: 'SIM-1042', amount: 10608.5, status: 'succeeded', method: 'card' })
+    await this.notifications.create([{ orgId: northstar.id, subject: 'Report ready · Gulf Coast Trunk 12', body: 'The latest integrity report is ready for review.', status: 'read', readAt: new Date() }, { orgId: harris.id, subject: 'Invoice INV-1043 issued', body: 'Your marketplace invoice is available.', status: 'queued' }])
+    await this.settings.create([{ key: 'taxRate', value: { rate: 0.0825 } }, { key: 'supportEmail', value: { email: 'support@linesight.io' } }])
     await this.leads.create([
       { name: 'Cody Bennett', email: 'cody@riverside.example', company: 'Riverside Gathering', type: 'operator', message: 'Need a 24-inch ILI run quoted for Q1.', status: 'new', source: 'website' },
       { name: 'Alicia Grant', email: 'alicia@hcfcd.example', company: 'Harris County Flood Control', type: 'utility', message: 'Looking at acoustic leak surveys across 40 km.', status: 'qualified', source: 'website' },

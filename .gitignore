@@ -1,4 +1,7 @@
 node_modules
+.pnpm-store
+.nuxt
+.output
 dist
 .env
 .env.*
@@ -6,3 +9,6 @@ dist
 .DS_Store
 *.log
 coverage
+services/engine/.venv
+services/engine/__pycache__
+uploads

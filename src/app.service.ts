@@ -66,15 +66,15 @@ export class AppService {
     const pressure = Number(body.maopKpa) || 6900
     const distance = Number(body.distanceKm) || 12
     const product = String(body.product || 'Crude oil')
-    const family = od >= 610 ? 'Large-line ILI tool' : od >= 323 ? 'Standard MFL pig' : od >= 168 ? 'Compact utility pig' : 'Small-line diagnostic kit'
+    const family = od >= 610 ? 'Large-line inspection tool' : od >= 323 ? 'Standard inspection tool' : od >= 168 ? 'Small utility tool' : 'Home camera kit'
     const cups = od >= 610 ? 4 : od >= 323 ? 3 : 2
     const bypass = od < 219 ? 8 : od < 508 ? 12 : 15
     const base = family.includes('Large') ? 18500 : family.includes('Standard') ? 9800 : family.includes('Compact') ? 4200 : 1850
     const price = Math.round((base + distance * (family.includes('Large') ? 220 : 85)) / 100) * 100
     return {
       family, cups, bypassPct: bypass, priceUsd: price, leadTime: family.includes('Large') ? '6–8 weeks' : family.includes('Standard') ? '3–5 weeks' : '7–10 days',
-      notes: `${cups}-cup configuration for ${od} mm OD, ${wall} mm wall, ${pressure} kPa MAOP. Recommended for ${product.toLowerCase()} service over ${distance} km.`,
-      specs: [{ label: 'Pipe OD', value: `${od} mm` }, { label: 'Wall', value: `${wall} mm` }, { label: 'MAOP', value: `${pressure} kPa` }, { label: 'Bypass', value: `${bypass}%` }, { label: 'Cups', value: String(cups) }],
+      notes: `A ${cups}-cup setup for a ${od} mm pipe with a ${wall} mm wall, running at up to ${pressure} kPa. Suggested for ${product.toLowerCase()} over ${distance} km.`,
+      specs: [{ label: 'Pipe width', value: `${od} mm` }, { label: 'Wall thickness', value: `${wall} mm` }, { label: 'Max pressure', value: `${pressure} kPa` }, { label: 'Flow gap', value: `${bypass}%` }, { label: 'Cups', value: String(cups) }],
     }
   }
 

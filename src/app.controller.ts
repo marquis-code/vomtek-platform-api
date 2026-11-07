@@ -23,7 +23,7 @@ function parseCsv(text: string) {
 @Controller()
 export class PublicController {
   constructor(private app: AppService) {}
-  @Public() @Get('health') health() { return { status: 'ok', service: 'linesight-api', at: new Date().toISOString() } }
+  @Public() @Get('health') health() { return { status: 'ok', service: 'vomtek-platform-api', at: new Date().toISOString() } }
   @Public() @Get('public/stats') stats() { return this.app.publicStats() }
   @Public() @Get('catalog/products') products(@Query() q: any) { return this.app.products(q) }
   @Public() @Get('catalog/products/:slug') product(@Param('slug') slug: string) { return this.app.product(slug) }
@@ -49,10 +49,10 @@ export class PortalController {
     return this.app.runInspection(user, { ...body, fileName: file.originalname, filePath: file.path, rows })
   }
   @Get('reports/:id') report(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.app.report(user, id) }
-  @Get('reports/:id/pdf') async reportPdf(@CurrentUser() user: AuthUser, @Param('id') id: string) { const buffer = await this.app.reportPdf(user, id); return new StreamableFile(buffer, { type: 'application/pdf', disposition: `attachment; filename="linesight-report-${id}.pdf"` }) }
+  @Get('reports/:id/pdf') async reportPdf(@CurrentUser() user: AuthUser, @Param('id') id: string) { const buffer = await this.app.reportPdf(user, id); return new StreamableFile(buffer, { type: 'application/pdf', disposition: `attachment; filename="vomtek-report-${id}.pdf"` }) }
   @Get('reports/:id/comparison') comparison(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.app.comparison(user, id) }
   @Get('invoices') invoices(@CurrentUser() user: AuthUser) { return this.app.invoicesFor(user) }
-  @Get('invoices/:id/pdf') async invoicePdf(@CurrentUser() user: AuthUser, @Param('id') id: string) { const buffer = await this.app.invoicePdf(user, id); return new StreamableFile(buffer, { type: 'application/pdf', disposition: `attachment; filename="linesight-invoice-${id}.pdf"` }) }
+  @Get('invoices/:id/pdf') async invoicePdf(@CurrentUser() user: AuthUser, @Param('id') id: string) { const buffer = await this.app.invoicePdf(user, id); return new StreamableFile(buffer, { type: 'application/pdf', disposition: `attachment; filename="vomtek-invoice-${id}.pdf"` }) }
   @Post('invoices/:id/pay') payInvoice(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.app.payInvoice(user, id) }
   @Get('orders') orders(@CurrentUser() user: AuthUser) { return this.app.ordersFor(user) }
   @Post('orders') order(@CurrentUser() user: AuthUser, @Body() body: any) { return this.app.createOrder(user, body) }
@@ -100,7 +100,7 @@ export class AdminController {
   @Get('manufacturers') manufacturers() { return this.app.adminManufacturers() }
   @Get('leads') leads() { return this.app.adminLeads() }
   @Get('invoices') invoices() { return this.app.adminInvoices() }
-  @Get('invoices/:id/pdf') async invoicePdf(@Param('id') id: string) { const buffer = await this.app.adminInvoicePdf(id); return new StreamableFile(buffer, { type: 'application/pdf', disposition: `attachment; filename="linesight-invoice-${id}.pdf"` }) }
+  @Get('invoices/:id/pdf') async invoicePdf(@Param('id') id: string) { const buffer = await this.app.adminInvoicePdf(id); return new StreamableFile(buffer, { type: 'application/pdf', disposition: `attachment; filename="vomtek-invoice-${id}.pdf"` }) }
   @Post('invoices/:id/refund') refund(@CurrentUser() user: AuthUser, @Param('id') id: string, @Body() body: any) { return this.app.refundInvoice(user, id, body) }
   @Get('work-orders') workOrders() { return this.app.workOrdersFor({ role: 'admin' }) }
   @Post('work-orders/:id/verify') verify(@CurrentUser() user: AuthUser, @Param('id') id: string) { return this.app.verifyWorkOrder(user, id) }

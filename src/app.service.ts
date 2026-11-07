@@ -109,7 +109,7 @@ export class AppService {
     const asset = await this.assets.findOne({ _id: body.assetId, orgId: user.orgId }).lean()
     if (!asset) throw new NotFoundException('Asset not found')
     const previous = await this.reports.findOne({ orgId: user.orgId, assetId: asset._id.toString() }).sort({ createdAt: -1 }).lean()
-    const run = await this.runs.create({ orgId: user.orgId, assetId: asset._id.toString(), vendor: body.vendor || 'LineSight Engine', toolType: body.toolType || 'MFL + Caliper', runDate: new Date(), fileName: body.fileName || 'inline-run.csv', filePath: body.filePath || '', rows: Array.isArray(body.rows) ? body.rows : [], status: 'processing' })
+    const run = await this.runs.create({ orgId: user.orgId, assetId: asset._id.toString(), vendor: body.vendor || 'Vomtek Engine', toolType: body.toolType || 'MFL + Caliper', runDate: new Date(), fileName: body.fileName || 'inline-run.csv', filePath: body.filePath || '', rows: Array.isArray(body.rows) ? body.rows : [], status: 'processing' })
     const result = await this.engine.analyzeIli(asset, Array.isArray(body.rows) ? body.rows : [], previous)
     const report = await this.reports.create({ ...result, orgId: user.orgId, assetId: asset._id.toString(), runId: run._id.toString(), previousReportId: previous?._id?.toString() || '', createdAt: new Date() })
     run.status = 'complete'; run.reportId = report._id.toString(); run.summary = result.summary; await run.save()
@@ -169,7 +169,7 @@ export class AppService {
     return this.jobs.find({ email: user.email }).sort({ createdAt: -1 }).lean()
   }
   async createJob(user: any, body: any) {
-    const ref = `LSH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 8999)}`
+    const ref = `VTK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 8999)}`
     return this.jobs.create({ ref, customerName: body.customerName || user.name, email: body.email || user.email, phone: body.phone, address: body.address, city: body.city || 'Houston', propertyType: body.propertyType || 'residential', issue: body.issue, videoUrl: body.videoUrl, status: 'new', healthScore: 0 })
   }
   async job(user: any, id: string): Promise<any> {
@@ -187,7 +187,7 @@ export class AppService {
     const result = await this.engine.analyzeVideo(job.toObject())
     job.defects = (result as any).defects || []
     job.healthScore = Number((result as any).healthScore || 0)
-    job.certificate = { issuedAt: new Date(), standard: 'LineSight Visual Assessment v1', summary: (result as any).summary, confidence: (result as any).confidence, footageReviewedFt: (result as any).footageReviewedFt }
+    job.certificate = { issuedAt: new Date(), standard: 'Vomtek Visual Assessment v1', summary: (result as any).summary, confidence: (result as any).confidence, footageReviewedFt: (result as any).footageReviewedFt }
     job.status = 'bidding'; await job.save()
     return { job, result }
   }
@@ -386,7 +386,7 @@ export class AppService {
   async createManufacturerProduct(user: any, body: any) {
     const org = await this.orgs.findById(user.orgId).lean()
     const slug = String(body.name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-' + Date.now().toString().slice(-4)
-    return this.productModel.create({ ...body, slug, sku: body.sku || `LS-${Date.now().toString().slice(-6)}`, vendor: org?.name, active: true, image: body.image || 'six-inch-pig' })
+    return this.productModel.create({ ...body, slug, sku: body.sku || `VTK-${Date.now().toString().slice(-6)}`, vendor: org?.name, active: true, image: body.image || 'six-inch-pig' })
   }
   async applyPartner(body: any) {
     const lead = await this.leads.create({ name: body.name, email: body.email, company: body.company, type: 'manufacturer', message: body.message, source: 'partner-application' })

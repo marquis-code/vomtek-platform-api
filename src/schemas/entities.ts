@@ -97,7 +97,7 @@ export class Product {
   @Prop({ required: true }) priceUsd: number
   @Prop({ default: 'each' }) unit: string
   @Prop({ default: '2–3 weeks' }) leadTime: string
-  @Prop({ default: 'LineSight Supply' }) vendor: string
+  @Prop({ default: 'Vomtek Supply' }) vendor: string
   @Prop({ default: 0 }) stock: number
   @Prop({ default: '' }) image: string
   @Prop({ type: [Object], default: [] }) specs: Record<string, string>[]

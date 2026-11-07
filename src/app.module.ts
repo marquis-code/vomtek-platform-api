@@ -34,11 +34,11 @@ const models = MongooseModule.forFeature([
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27019/linesight'),
+    MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27019/vomtek_platform'),
     JwtModule.registerAsync({
       global: true,
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({ secret: config.get('JWT_SECRET') || 'linesight-dev-secret', signOptions: { expiresIn: '7d' } }),
+      useFactory: (config: ConfigService) => ({ secret: config.get('JWT_SECRET') || 'vomtek-dev-secret', signOptions: { expiresIn: '7d' } }),
     }),
     models,
   ],

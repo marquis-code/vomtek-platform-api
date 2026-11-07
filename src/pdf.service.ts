@@ -5,7 +5,7 @@ import PDFDocument from 'pdfkit'
 export class PdfService {
   async report(report: any, asset: any): Promise<Buffer> {
     return this.build((doc) => {
-      this.header(doc, 'LINESIGHT · INTEGRITY REPORT', report.ref)
+      this.header(doc, 'VOMTEK · INTEGRITY REPORT', report.ref)
       doc.fontSize(22).fillColor('#07100e').text(asset?.name || 'Pipeline asset', { continued: false })
       doc.moveDown(0.2).fontSize(9).fillColor('#6b766f').text(`${asset?.location || ''} · ${asset?.diameterMm || ''} mm OD · ${asset?.lengthKm || ''} km · MAOP ${asset?.maopKpa || ''} kPa`)
       doc.moveDown(1.2)
@@ -36,8 +36,8 @@ export class PdfService {
 
   async invoice(invoice: any, org: any): Promise<Buffer> {
     return this.build((doc) => {
-      this.header(doc, 'LINESIGHT · INVOICE', invoice.ref)
-      doc.fontSize(20).fillColor('#07100e').text(org?.name || 'LineSight customer')
+      this.header(doc, 'VOMTEK · INVOICE', invoice.ref)
+      doc.fontSize(20).fillColor('#07100e').text(org?.name || 'Vomtek customer')
       doc.fontSize(9).fillColor('#6b766f').text(`Issued ${new Date(invoice.createdAt || Date.now()).toLocaleDateString('en-US')} · Due ${new Date(invoice.dueAt || Date.now()).toLocaleDateString('en-US')} · ${invoice.status.toUpperCase()}`)
       doc.moveDown(1.5)
       doc.fontSize(10).fillColor('#07100e')
@@ -56,7 +56,7 @@ export class PdfService {
       doc.text('Tax', 360, y).text(`$${Number(invoice.tax || 0).toLocaleString()}`, 430, y, { align: 'right', width: 120 })
       y += 18
       doc.fontSize(13).fillColor('#07100e').text('Total', 360, y).text(`$${Number(invoice.total || 0).toLocaleString()}`, 430, y, { align: 'right', width: 120 })
-      doc.fontSize(8).fillColor('#78857c').text('LineSight platform invoice. Payment and refund records are available in Studio.', 40, 740)
+      doc.fontSize(8).fillColor('#78857c').text('Vomtek platform invoice. Payment and refund records are available in Studio.', 40, 740)
     })
   }
 

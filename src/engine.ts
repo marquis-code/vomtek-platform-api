@@ -106,7 +106,7 @@ export class EngineService {
     const remaining = Math.min(...anomalies.map(a => a.remainingLifeYears || 30), 30)
     const risk = critical.length ? (anomalies.some(a => a.severity === 'critical') ? 'critical' : 'high') : maxDepth > 25 ? 'medium' : 'low'
     return {
-      ref: `LS-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 8999)}`,
+      ref: `VTK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 8999)}`,
       summary: critical.length
         ? `${critical.length} high-priority anomalies require action. Deepest metal loss ${maxDepth.toFixed(1)}% of wall; estimated corrosion rate ${cgr.toFixed(2)} mm/yr.`
         : `No critical anomalies identified. Deepest metal loss ${maxDepth.toFixed(1)}% of wall; continue the planned reassessment interval.`,

@@ -14,9 +14,9 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
   app.enableCors({ origin: origins, credentials: true, methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'] })
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: false }))
-  const doc = new DocumentBuilder().setTitle('LineSight API').setDescription('Pipeline diagnostics, marketplace, rentals and homeowner workflows').setVersion('1.0').addBearerAuth().build()
+  const doc = new DocumentBuilder().setTitle('Vomtek API').setDescription('Pipeline diagnostics, marketplace, rentals and homeowner workflows').setVersion('1.0').addBearerAuth().build()
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, doc))
   await app.listen(Number(process.env.PORT) || 4110, '0.0.0.0')
-  console.log(`LineSight API listening on http://localhost:${process.env.PORT || 4110}/api`)
+  console.log(`Vomtek API listening on http://localhost:${process.env.PORT || 4110}/api`)
 }
 void bootstrap()

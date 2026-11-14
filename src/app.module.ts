@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { join } from 'path'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { MongooseModule } from '@nestjs/mongoose'
@@ -9,6 +10,7 @@ import { EngineService } from './engine'
 import { PdfService } from './pdf.service'
 import { AuditService } from './audit.service'
 import { SeedService } from './seed.service'
+import { LeadNotifier } from './lead-notifier'
 import {
   Asset, AssetSchema, Bid, BidSchema, Escrow, EscrowSchema, InspectionRun, InspectionRunSchema, Job, JobSchema,
   Lead, LeadSchema, Manufacturer, ManufacturerSchema, Order, OrderSchema, Organization, OrganizationSchema,
@@ -33,7 +35,7 @@ const models = MongooseModule.forFeature([
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: [join(__dirname, '..', '.env'), '.env'] }),
     MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27019/vomtek_platform'),
     JwtModule.registerAsync({
       global: true,
@@ -43,6 +45,6 @@ const models = MongooseModule.forFeature([
     models,
   ],
   controllers: [AuthController, PublicController, PortalController, AdminController],
-  providers: [AppService, EngineService, SeedService, PdfService, AuditService],
+  providers: [AppService, EngineService, SeedService, PdfService, AuditService, LeadNotifier],
 })
 export class AppModule {}

@@ -10,9 +10,20 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const uploads = process.env.UPLOAD_DIR || join(process.cwd(), 'uploads'); mkdirSync(uploads, { recursive: true })
   app.useStaticAssets(uploads, { prefix: '/uploads/' })
-  const origins = (process.env.CORS_ORIGINS || 'http://localhost:3200,http://localhost:3210').split(',').map(s => s.trim())
   app.setGlobalPrefix('api')
-  app.enableCors({ origin: origins, credentials: true, methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'] })
+  // Demo/open CORS: reflect any requesting origin so browser clients on
+  // localhost, 127.0.0.1, LAN IPs and preview hosts can all reach the API.
+  // `origin: true` reflects the caller's origin (required when credentials
+  // are enabled). Preflight requests are answered for every route.
+  app.enableCors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin', 'X-Requested-With', 'X-Request-Id'],
+    exposedHeaders: ['Content-Disposition', 'Content-Length'],
+    maxAge: 86400,
+    optionsSuccessStatus: 204,
+  })
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: false }))
   const doc = new DocumentBuilder().setTitle('Vomtek API').setDescription('Pipeline diagnostics, marketplace, rentals and homeowner workflows').setVersion('1.0').addBearerAuth().build()
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, doc))

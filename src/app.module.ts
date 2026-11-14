@@ -10,7 +10,6 @@ import { EngineService } from './engine'
 import { PdfService } from './pdf.service'
 import { AuditService } from './audit.service'
 import { SeedService } from './seed.service'
-import { LeadNotifier } from './lead-notifier'
 import {
   Asset, AssetSchema, Bid, BidSchema, Escrow, EscrowSchema, InspectionRun, InspectionRunSchema, Job, JobSchema,
   Lead, LeadSchema, Manufacturer, ManufacturerSchema, Order, OrderSchema, Organization, OrganizationSchema,
@@ -45,6 +44,6 @@ const models = MongooseModule.forFeature([
     models,
   ],
   controllers: [AuthController, PublicController, PortalController, AdminController],
-  providers: [AppService, EngineService, SeedService, PdfService, AuditService, LeadNotifier],
+  providers: [AppService, EngineService, SeedService, PdfService, AuditService],
 })
 export class AppModule {}

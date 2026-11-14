@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
 import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { Asset, Bid, ContractorProfile, Doc, Escrow, InspectionRun, Invoice, Job, Lead, Manufacturer, Notification, Order, Organization, Payment, Plan, Product, Refund, Rental, Report, Setting, Subscription, User, WorkOrder } from './schemas/entities'
 import { EngineService } from './engine'
 import { PdfService } from './pdf.service'
 import { AuditService } from './audit.service'
-import { LeadNotifier } from './lead-notifier'
 
 @Injectable()
 export class AppService {
@@ -35,7 +35,7 @@ export class AppService {
     private engine: EngineService,
     private pdf: PdfService,
     private audit: AuditService,
-    private leadNotifier: LeadNotifier,
+    private config: ConfigService,
   ) {}
 
   async products(query: any = {}) {
@@ -82,15 +82,18 @@ export class AppService {
 
   async createLead(body: any) {
     const lead = await this.leads.create({ name: body.name, email: body.email, company: body.company, type: body.type || 'operator', message: body.message, source: body.source || 'website' })
-    const delivery = await this.leadNotifier.deliver(lead)
-    const status = delivery.email === 'sent' || delivery.whatsapp === 'sent' ? 'sent' : 'queued'
-    await this.notifications.create({
-      channel: 'lead',
-      subject: `New website enquiry from ${lead.name || lead.email}`,
-      body: `Email: ${delivery.email}\nWhatsApp: ${delivery.whatsapp}\n\n${lead.message || ''}`,
-      status,
-    })
-    return { ok: true }
+    const digits = String(this.config.get('WHATSAPP_TO') || '').replace(/\D/g, '')
+    const text = [
+      'New Vomtek website enquiry',
+      '',
+      `Name: ${lead.name || '—'}`,
+      `Email: ${lead.email || '—'}`,
+      `Company: ${lead.company || '—'}`,
+      `Division: ${lead.type || '—'}`,
+      '',
+      lead.message || '—',
+    ].join('\n')
+    return { ok: true, whatsappUrl: digits ? `https://wa.me/${digits}?text=${encodeURIComponent(text)}` : '' }
   }
 
   async overview(user: any) {

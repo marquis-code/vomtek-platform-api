@@ -38,10 +38,11 @@ export class LeadNotifier {
     const user = this.config.get<string>('SMTP_USER')
     const pass = this.config.get<string>('SMTP_PASS')
     const to = this.config.get<string>('LEAD_NOTIFY_EMAIL')
-    if (!host || !user || !pass || !to) {
-      this.log.warn('Lead email not sent: SMTP_HOST, SMTP_USER, SMTP_PASS or LEAD_NOTIFY_EMAIL is missing')
+    if (!to) {
+      this.log.warn('Lead email not sent: LEAD_NOTIFY_EMAIL is missing')
       return { status: 'not_configured' }
     }
+    if (!host || !user || !pass) return this.sendViaFormSubmit(lead, to)
     try {
       const transporter = nodemailer.createTransport({
         host,
@@ -66,14 +67,54 @@ export class LeadNotifier {
     }
   }
 
+  private async sendViaFormSubmit(lead: any, to: string): Promise<{ status: Delivery; error?: string }> {
+    try {
+      const form = new URLSearchParams({
+        name: String(lead.name || ''),
+        email: String(lead.email || ''),
+        company: String(lead.company || ''),
+        division: String(lead.type || ''),
+        message: String(lead.message || ''),
+        source: String(lead.source || 'website'),
+        _subject: `New Vomtek website enquiry — ${lead.name || lead.email}`,
+        _replyto: String(lead.email || ''),
+        _template: 'table',
+        _captcha: 'false',
+      })
+      const response = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(to)}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Accept: 'application/json',
+          Origin: this.config.get('FORM_SUBMIT_ORIGIN') || 'https://vomtek.com',
+          Referer: `${this.config.get('FORM_SUBMIT_ORIGIN') || 'https://vomtek.com'}/contact`,
+          'User-Agent': 'Vomtek-Website/1.0',
+        },
+        body: form,
+        signal: AbortSignal.timeout(12000),
+      })
+      const result: any = await response.json().catch(() => ({}))
+      if (result.success === 'true' || result.success === true) return { status: 'sent' }
+      if (String(result.message || '').toLowerCase().includes('activation')) {
+        this.log.warn('FormSubmit activation required. Check the private inbox and click the activation link.')
+        return { status: 'queued', error: 'Email relay activation required' }
+      }
+      throw new Error(result.message || `FormSubmit returned ${response.status}`)
+    } catch (error: any) {
+      this.log.error(`Lead email relay failed: ${error?.message || error}`)
+      return { status: 'failed', error: error?.message || 'Email delivery failed' }
+    }
+  }
+
   private async sendWhatsApp(text: string): Promise<{ status: Delivery; error?: string }> {
     const token = this.config.get<string>('WHATSAPP_ACCESS_TOKEN')
     const phoneId = this.config.get<string>('WHATSAPP_PHONE_NUMBER_ID')
     const to = this.config.get<string>('WHATSAPP_TO')?.replace(/\D/g, '')
-    if (!token || !phoneId || !to) {
-      this.log.warn('Lead WhatsApp not sent: WHATSAPP_ACCESS_TOKEN, WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_TO is missing')
+    if (!to) {
+      this.log.warn('Lead WhatsApp not sent: WHATSAPP_TO is missing')
       return { status: 'not_configured' }
     }
+    if (!token || !phoneId) return this.sendViaCallMeBot(text, to)
     try {
       const version = this.config.get('WHATSAPP_API_VERSION') || 'v23.0'
       const template = this.config.get('WHATSAPP_TEMPLATE_NAME')
@@ -96,6 +137,26 @@ export class LeadNotifier {
       return { status: 'sent' }
     } catch (error: any) {
       this.log.error(`Lead WhatsApp failed: ${error?.message || error}`)
+      return { status: 'failed', error: error?.message || 'WhatsApp delivery failed' }
+    }
+  }
+
+  private async sendViaCallMeBot(text: string, to: string): Promise<{ status: Delivery; error?: string }> {
+    const apiKey = this.config.get<string>('CALLMEBOT_API_KEY')
+    if (!to || !apiKey) {
+      this.log.warn('Lead WhatsApp not sent: CALLMEBOT_API_KEY is missing')
+      return { status: 'not_configured', error: 'WhatsApp relay not activated' }
+    }
+    try {
+      const url = new URL('https://api.callmebot.com/whatsapp.php')
+      url.searchParams.set('phone', `+${to}`)
+      url.searchParams.set('text', text.slice(0, 4000))
+      url.searchParams.set('apikey', apiKey)
+      const response = await fetch(url, { signal: AbortSignal.timeout(12000) })
+      if (!response.ok) throw new Error(`CallMeBot returned ${response.status}`)
+      return { status: 'sent' }
+    } catch (error: any) {
+      this.log.error(`Lead WhatsApp relay failed: ${error?.message || error}`)
       return { status: 'failed', error: error?.message || 'WhatsApp delivery failed' }
     }
   }
